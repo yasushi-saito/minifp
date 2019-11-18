@@ -19,10 +19,10 @@ const (
 
 type Literal struct {
 	typ    LiteralType
-	intVal int
+	intVal int64
 }
 
-func NewLiteralInt(v int) Literal { return Literal{typ: LiteralInt, intVal: v} }
+func NewLiteralInt(v int64) Literal { return Literal{typ: LiteralInt, intVal: int64(v)} }
 
 func (l Literal) String() string {
 	switch l.typ {
@@ -32,7 +32,7 @@ func (l Literal) String() string {
 	panic(l)
 }
 
-func (l Literal) Int() int {
+func (l Literal) Int() int64 {
 	if l.typ != LiteralInt {
 		panic(l)
 	}
@@ -225,14 +225,23 @@ func (k *KMachine) Step() bool {
 		k.Env = top.Env
 		k.Stack = stack.Push(KClosure{Code: kRet, Env: val})
 	case *KBuiltinOp:
-		switch v.Op {
-		case BuiltinOpAdd:
+		switch v.Op.NArg() {
+		case 2:
 			arg1, stack := k.Stack.Pop()
 			arg0, stack := stack.Pop()
 			k.Stack = stack
 			v0, v1 := arg0.Literal(), arg1.Literal()
 			k.Code = kRet
-			val := NewLiteralInt(v0.Int() + v1.Int())
+
+			var val Literal
+			switch v.Op {
+			case BuiltinOpAdd:
+				val = NewLiteralInt(v0.Int() + v1.Int())
+			case BuiltinOpMul:
+				val = NewLiteralInt(v0.Int() * v1.Int())
+			default:
+				panic(v)
+			}
 			k.Env = KEnv{Const: &val}
 		}
 	case *KSwapStack:

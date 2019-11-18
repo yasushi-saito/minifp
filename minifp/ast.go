@@ -1,59 +1,69 @@
 package minifp
 
-type SourcePos struct {
-	Path string
-	Line int
-}
+import "text/scanner"
 
 type ASTNode interface {
-	// SourcePos returns the source-code location of this node.
-	SourcePos() SourcePos
+	// scanner.Position returns the source-code location of this node.
+	Pos() scanner.Position
 }
 
 type ASTConst struct {
-	pos SourcePos
+	pos scanner.Position
 	Val Literal
 }
 
-func (n ASTConst) SourcePos() SourcePos { return n.pos }
+func (n ASTConst) Pos() scanner.Position { return n.pos }
 
 type ASTVar struct {
-	pos SourcePos
+	pos scanner.Position
 	Sym Symbol
 }
 
-func (n ASTVar) SourcePos() SourcePos { return n.pos }
+func (n ASTVar) Pos() scanner.Position { return n.pos }
 
 type ASTApply struct {
-	pos  SourcePos
+	pos  scanner.Position
 	Head ASTNode
 	Tail ASTNode
 }
 
-func (n ASTApply) SourcePos() SourcePos { return n.pos }
+func (n ASTApply) Pos() scanner.Position { return n.pos }
 
 type ASTLambda struct {
-	pos  SourcePos
+	pos  scanner.Position
 	Arg  Symbol
 	Body ASTNode
 }
 
-func (n ASTLambda) SourcePos() SourcePos { return n.pos }
+func (n ASTLambda) Pos() scanner.Position { return n.pos }
+
+type ASTAssign struct {
+	pos  scanner.Position
+	Sym  Symbol
+	Expr ASTNode
+}
+
+func (n ASTAssign) Pos() scanner.Position { return n.pos }
 
 type BuiltinOpType uint
 
 const (
 	BuiltinOpInvalid BuiltinOpType = iota
-	BuiltinOpAdd
+	BuiltinOpAdd                   = (1 << 16) | 2
+	BuiltinOpMul                   = (2 << 16) | 2
 )
 
+func (o BuiltinOpType) NArg() int {
+	return int(o & 0xffff)
+}
+
 type ASTApplyBuiltin struct {
-	pos  SourcePos
+	pos  scanner.Position
 	Op   BuiltinOpType
 	Args []ASTNode
 }
 
-func (n ASTApplyBuiltin) SourcePos() SourcePos { return n.pos }
+func (n ASTApplyBuiltin) Pos() scanner.Position { return n.pos }
 
 type compiler struct {
 	stack []Symbol
@@ -67,13 +77,13 @@ func (c *compiler) compile(node ASTNode) KCode {
 		c.stack = append(c.stack, v.Arg)
 		return &KLambda{Body: c.compile(v.Body)}
 		c.stack = c.stack[:len(c.stack)-1]
-	case ASTVar:
+	case *ASTVar:
 		for i, name := range c.stack {
 			if name == v.Sym {
 				return &KVar{Index: i}
 			}
 		}
-		panic(v)
+		panicf(node.Pos(), "variable %v not found in %+v", v.Sym, c.stack)
 	case *ASTApply:
 		return &KApply{Head: c.compile(v.Head), Tail: c.compile(v.Tail)}
 	case *ASTApplyBuiltin:

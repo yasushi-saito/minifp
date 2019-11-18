@@ -19,7 +19,7 @@ func InternSymbol(name string) Symbol {
 	symMu.Lock()
 	s, ok := symTable[name]
 	if !ok {
-		s := Symbol{&name}
+		s = Symbol{&name}
 		symTable[name] = s
 	}
 	symMu.Unlock()

@@ -34,7 +34,7 @@ main: toplevelExprList { yylex.(*parser).result = $1 }
 
 toplevelExprList:
   toplevelExpr { $$ = []ASTNode{$1} }
-  | main ';' toplevelExpr { $$ = append($1, $3)}
+  | toplevelExprList ';' toplevelExpr { $$ = append($1, $3)}
 
 toplevelExpr:
   tokIdent arglist '=' expr {

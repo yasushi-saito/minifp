@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/grailbio/testutil/assert"
 	"github.com/grailbio/testutil/expect"
 	"github.com/yasushi-saito/minifp/minifp"
 )

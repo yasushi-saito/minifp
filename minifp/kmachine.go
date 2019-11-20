@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"text/scanner"
 )
 
 type KCode interface {
@@ -46,15 +47,6 @@ type KLambda struct{ Body KCode }
 
 func (k *KLambda) DebugString() string {
 	return "ƛ"
-}
-
-type KAssign struct {
-	Addr KAddr
-	Expr KCode
-}
-
-func (k *KAssign) DebugString() string {
-	return fmt.Sprintf("var:%v=%s", k.Addr, k.Expr.DebugString())
 }
 
 type KApply struct{ Head, Tail KCode }
@@ -137,7 +129,7 @@ func (s kHeapMap) Pop() (cl KClosure, s2 kHeapMap) {
 	return cl, s2
 }
 
-func (s kHeapMap) Read(i uint32) KClosure {
+func (s kHeapMap) Read(i KAddr) KClosure {
 	cl := s.head
 	for i > 0 {
 		cl = cl.link
@@ -194,25 +186,21 @@ func (cl KClosure) Literal() Literal {
 	return *cl.Env.Const
 }
 
-type KAddr struct {
-	index  uint32
-	global bool
-}
+type KAddr uint32
 
+type kGlobalVar struct {
+	sym Symbol
+	cl  KClosure
+}
 type KMachine struct {
 	Code    KCode
 	Env     KEnv
-	Globals kHeapMap
+	Globals []kGlobalVar
 	Stack   kHeapMap
 	step    int
 }
 
 func (k *KMachine) Run(code KCode) Literal {
-	if v, ok := code.(*KAssign); ok {
-		k.Globals = k.Globals.Push(KClosure{v.Expr, KEnv{}})
-		log.Printf("Done: %v", k.Env.String())
-		return kNil
-	}
 	k.Code = code
 	for k.Step() {
 	}
@@ -230,11 +218,11 @@ func (k *KMachine) Step() bool {
 		k.Code = v.Head
 		k.Stack = k.Stack.Push(KClosure{Code: v.Tail, Env: k.Env})
 	case *KLocalVar:
-		cl := k.Env.Read(v.Addr.index)
+		cl := k.Env.Read(v.Addr)
 		k.Code = cl.Code
 		k.Env = cl.Env
 	case *KGlobalVar:
-		cl := k.Globals.Read(v.Addr.index)
+		cl := k.Globals[v.Addr].cl
 		k.Code = cl.Code
 		k.Env = cl.Env
 	case *KLambda:
@@ -294,4 +282,74 @@ func (k *KMachine) Step() bool {
 		return false
 	}
 	return true
+}
+
+func (k *KMachine) Compile(node ASTNode) KCode {
+	var c = compiler{globals: &k.Globals}
+	return c.compile(node)
+}
+
+type compiler struct {
+	globals *[]kGlobalVar // points to kMachine.Globals
+	stack   []Symbol
+}
+
+func (c *compiler) lookup(pos scanner.Position, sym Symbol) (addr KAddr, global bool, ok bool) {
+	for i, name := range c.stack {
+		if name == sym {
+			return KAddr(i), false, true
+		}
+	}
+	for i, g := range *c.globals {
+		if g.sym == sym {
+			return KAddr(i), true, true
+		}
+	}
+	return 0, false, false
+}
+
+func (c *compiler) compile(node ASTNode) KCode {
+	switch v := node.(type) {
+	case *ASTAssign:
+		addr, global, ok := c.lookup(v.pos, v.Sym)
+		if global {
+			panicf(v.pos, "local variable found where global is expected:%v", v.Sym)
+		}
+		cl := KClosure{Code: c.compile(v.Expr), Env: KEnv{}}
+		if ok {
+			(*c.globals)[addr].cl = cl
+		} else {
+			*c.globals = append(*c.globals, kGlobalVar{sym: v.Sym, cl: cl})
+		}
+		return cl.Code
+	case *ASTConst:
+		return (*KConst)(&v.Val)
+	case *ASTLambda:
+		c.stack = append(c.stack, v.Arg)
+		defer func() { c.stack = c.stack[:len(c.stack)-1] }()
+		return &KLambda{Body: c.compile(v.Body)}
+	case *ASTVar:
+		addr, global, ok := c.lookup(v.pos, v.Sym)
+		if !ok {
+			panicf(v.pos, "variable %v not found in %+v %+v", v.Sym, c.stack, *c.globals)
+		}
+		if global {
+			return &KGlobalVar{Addr: addr}
+		} else {
+			return &KLocalVar{Addr: addr}
+		}
+	case *ASTApply:
+		return &KApply{Head: c.compile(v.Head), Tail: c.compile(v.Tail)}
+	case *ASTApplyBuiltin:
+		if len(v.Args) == 1 {
+			return &KApply{Head: c.compile(v.Args[0]), Tail: &KBuiltinOp{v.Op}}
+		}
+		if len(v.Args) == 2 {
+			c0 := &KApply{Head: c.compile(v.Args[0]), Tail: &KSwapStack{1}}
+			c1 := &KApply{Head: c0, Tail: c.compile(v.Args[1])}
+			return &KApply{Head: c1, Tail: &KBuiltinOp{v.Op}}
+		}
+		panic("blah")
+	}
+	panic(node)
 }

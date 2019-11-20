@@ -48,7 +48,6 @@ func TestBuiltinBinaryOp(t *testing.T) {
 func TestAssign0(t *testing.T) {
 	km := &minifp.KMachine{}
 	expect.EQ(t, compileRun(t, km, `x = 10; x+x`).String(), "20")
-	expect.EQ(t, compileRun(t, km, `y = x; y+11`).String(), "31")
-	// TODO: this fails.
-	//expect.EQ(t, compileRun(t, km, `x = 20`).String(), "20")
+	expect.EQ(t, compileRun(t, km, `y = x; y+11`).String(), "21")
+	expect.EQ(t, compileRun(t, km, `x = 20`).String(), "20")
 }

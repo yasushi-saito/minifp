@@ -63,7 +63,14 @@ func (p *parser) Lex(y *yySymType) int {
 	}
 	if ch == scanner.Ident {
 		y.ident = p.sc.TokenText()
-		return tokIdent
+		switch p.sc.TokenText() {
+		case "letrec":
+			return tokLetrec
+		case "in":
+			return tokIn
+		default:
+			return tokIdent
+		}
 	}
 	if ch == '=' || ch == '(' || ch == ')' || ch == '+' ||
 		ch == '*' || ch == '\\' || ch == ';' {

@@ -12,22 +12,28 @@ func lexpos(yylex yyLexer) scanner.Position {
 }
 
 type yySymType struct {
-	yys     int
-	astlist []ASTNode
-	ast     ASTNode
-	arglist []string
-	ident   string
+	yys        int
+	astlist    []ASTNode
+	ast        ASTNode
+	assign     *ASTAssign
+	assignlist []*ASTAssign
+	arglist    []string
+	ident      string
 }
 
 const tokIdent = 57346
-const tokLiteral = 57347
-const tokArrow = 57348
+const tokLetrec = 57347
+const tokIn = 57348
+const tokLiteral = 57349
+const tokArrow = 57350
 
 var yyToknames = [...]string{
 	"$end",
 	"error",
 	"$unk",
 	"tokIdent",
+	"tokLetrec",
+	"tokIn",
 	"tokLiteral",
 	"tokArrow",
 	"';'",
@@ -50,53 +56,58 @@ var yyExca = [...]int{
 	-2, 0,
 	-1, 4,
 	4, 6,
-	8, 6,
+	10, 6,
 	-2, 10,
 }
 
 const yyPrivate = 57344
 
-const yyLast = 43
+const yyLast = 61
 
 var yyAct = [...]int{
 
-	11, 5, 14, 6, 19, 3, 23, 2, 15, 7,
-	5, 8, 19, 20, 21, 17, 18, 9, 1, 24,
-	14, 6, 0, 10, 25, 12, 13, 7, 22, 8,
-	14, 6, 16, 4, 6, 12, 13, 7, 0, 8,
-	7, 0, 8,
+	12, 5, 19, 30, 10, 20, 18, 23, 16, 15,
+	9, 5, 6, 22, 24, 25, 13, 14, 7, 26,
+	8, 2, 28, 31, 3, 29, 23, 1, 32, 33,
+	27, 35, 34, 15, 9, 21, 6, 0, 11, 0,
+	13, 14, 7, 0, 8, 15, 9, 17, 6, 4,
+	9, 0, 6, 0, 7, 0, 8, 0, 7, 0,
+	8,
 }
 var yyPact = [...]int{
 
-	29, -1000, 10, -1000, -1000, 26, -1000, -2, -1000, 29,
-	8, 26, -2, -2, -1000, 16, 0, -1000, -2, -1000,
-	26, 26, -1000, -2, 26, 26,
+	45, -1000, -5, -1000, -1000, 29, -1000, 41, -1000, 1,
+	45, 3, 29, 41, 41, -1000, 5, 22, 16, -1000,
+	-7, -1000, 41, -1000, 29, 29, -1000, 41, 41, 1,
+	41, 29, 29, 29, -1000, 29,
 }
 var yyPgo = [...]int{
 
-	0, 18, 7, 5, 0, 23,
+	0, 27, 21, 0, 24, 2, 6, 38,
 }
 var yyR1 = [...]int{
 
-	0, 1, 2, 2, 3, 3, 5, 5, 4, 4,
-	4, 4, 4, 4, 4,
+	0, 1, 2, 2, 4, 4, 7, 7, 3, 3,
+	3, 3, 3, 3, 3, 3, 6, 6, 5,
 }
 var yyR2 = [...]int{
 
 	0, 1, 1, 3, 4, 1, 0, 2, 1, 2,
-	1, 3, 3, 3, 4,
+	1, 3, 3, 3, 4, 4, 1, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -2, -3, 4, -4, 5, 11, 13, 7,
-	-5, -4, 9, 10, 4, -4, -5, -3, 8, 4,
-	-4, -4, 12, 6, -4, -4,
+	-1000, -1, -2, -4, 4, -3, 7, 13, 15, 5,
+	9, -7, -3, 11, 12, 4, -3, -7, -6, -5,
+	4, -4, 10, 4, -3, -3, 14, 8, 6, 9,
+	10, -3, -3, -3, -5, -3,
 }
 var yyDef = [...]int{
 
 	0, -2, 1, 2, -2, 5, 8, 0, 6, 0,
-	0, 9, 0, 0, 10, 0, 0, 3, 0, 7,
-	11, 12, 13, 0, 4, 14,
+	0, 0, 9, 0, 0, 10, 0, 0, 0, 16,
+	0, 3, 0, 7, 11, 12, 13, 0, 0, 0,
+	0, 4, 14, 15, 17, 18,
 }
 var yyTok1 = [...]int{
 
@@ -104,16 +115,16 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	11, 12, 10, 9, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 7,
-	3, 8, 3, 3, 3, 3, 3, 3, 3, 3,
+	13, 14, 12, 11, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 9,
+	3, 10, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 13,
+	3, 3, 15,
 }
 var yyTok2 = [...]int{
 
-	2, 3, 4, 5, 6,
+	2, 3, 4, 5, 6, 7, 8,
 }
 var yyTok3 = [...]int{
 	0,
@@ -522,6 +533,26 @@ yydefault:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
 			yyVAL.ast = newLambda(lexpos(yylex), yyDollar[2].arglist, yyDollar[4].ast)
+		}
+	case 15:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.ast = &ASTLetrec{pos: lexpos(yylex), Bindings: yyDollar[2].assignlist, Body: yyDollar[4].ast}
+		}
+	case 16:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.assignlist = []*ASTAssign{yyDollar[1].assign}
+		}
+	case 17:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.assignlist = append(yyDollar[1].assignlist, yyDollar[3].assign)
+		}
+	case 18:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.assign = &ASTAssign{pos: lexpos(yylex), Sym: InternSymbol(yyDollar[1].ident), Expr: yyDollar[3].ast}
 		}
 	}
 	goto yystack /* stack new state and value */

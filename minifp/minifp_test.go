@@ -20,25 +20,25 @@ func compileRun(t *testing.T, km *minifp.KMachine, expr string) minifp.Literal {
 }
 
 func TestConst(t *testing.T) {
-	km := &minifp.KMachine{}
+	km := minifp.NewMachine()
 	val := compileRun(t, km, "10")
 	expect.EQ(t, val.String(), "10")
 }
 
 func TestIDFunction(t *testing.T) {
-	km := &minifp.KMachine{}
+	km := minifp.NewMachine()
 	val := compileRun(t, km, `(\x -> x) 10`)
 	expect.EQ(t, val.String(), "10")
 }
 
 func TestFunction2(t *testing.T) {
-	km := &minifp.KMachine{}
+	km := minifp.NewMachine()
 	val := compileRun(t, km, `(\x -> x*2) 10`)
 	expect.EQ(t, val.String(), "20")
 }
 
 func TestBuiltinBinaryOp(t *testing.T) {
-	km := &minifp.KMachine{}
+	km := minifp.NewMachine()
 	val := compileRun(t, km, `10+11`)
 	expect.EQ(t, val.String(), "21")
 	val = compileRun(t, km, `10*11`)
@@ -46,8 +46,14 @@ func TestBuiltinBinaryOp(t *testing.T) {
 }
 
 func TestAssign0(t *testing.T) {
-	km := &minifp.KMachine{}
+	km := minifp.NewMachine()
 	expect.EQ(t, compileRun(t, km, `x = 10; x+x`).String(), "20")
 	expect.EQ(t, compileRun(t, km, `y = x; y+11`).String(), "21")
 	expect.EQ(t, compileRun(t, km, `x = 20`).String(), "20")
+}
+
+func TestLetrec(t *testing.T) {
+	km := minifp.NewMachine()
+	expect.EQ(t, compileRun(t, km, `letrec x=10 in x*x`).String(), "100")
+	expect.EQ(t, compileRun(t, km, `letrec x=10; y=x+1 in x*y`).String(), "110")
 }

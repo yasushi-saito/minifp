@@ -65,6 +65,15 @@ const (
 	BuiltinOpMul                   = (2 << 16) | 2
 )
 
+func (op BuiltinOpType) String() string {
+	switch op {
+	case BuiltinOpAdd:
+		return "builtin:+"
+	case BuiltinOpMul:
+		return "builtin:*"
+	}
+	return fmt.Sprintf("builtin:%d", op)
+}
 func (o BuiltinOpType) NArg() int {
 	return int(o & 0xffff)
 }
@@ -79,7 +88,7 @@ func (n ASTApplyBuiltin) Pos() scanner.Position { return n.pos }
 
 func (n ASTApplyBuiltin) String() string {
 	var buf strings.Builder
-	buf.WriteString("(builtin:")
+	buf.WriteRune('(')
 	buf.WriteString(fmt.Sprint(n.Op))
 	for _, arg := range n.Args {
 		buf.WriteRune(' ')
@@ -87,4 +96,15 @@ func (n ASTApplyBuiltin) String() string {
 	}
 	buf.WriteRune(')')
 	return buf.String()
+}
+
+type ASTLetrec struct {
+	pos      scanner.Position
+	Bindings []*ASTAssign
+	Body     ASTNode
+}
+
+func (n ASTLetrec) Pos() scanner.Position { return n.pos }
+func (n ASTLetrec) String() string {
+	return fmt.Sprintf("letrec %+v in %v", n.Bindings, n.Body)
 }

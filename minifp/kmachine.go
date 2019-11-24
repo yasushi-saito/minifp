@@ -43,10 +43,23 @@ func (l Literal) Int() int64 {
 	return l.intVal
 }
 
-type KLambda struct{ Body KCode }
+type KLambda struct {
+	Arg  Symbol
+	Body KCode
+}
 
 func (k *KLambda) DebugString() string {
 	return "ƛ"
+}
+
+type KLetrec struct {
+	VarNames []Symbol
+	VarExprs []KCode
+	Body     KCode
+}
+
+func (k *KLetrec) DebugString() string {
+	return fmt.Sprintf("letrec %v %v %v", k.VarNames, k.VarExprs, k.Body.DebugString())
 }
 
 type KApply struct{ Head, Tail KCode }
@@ -55,14 +68,9 @@ func (k *KApply) DebugString() string {
 	return fmt.Sprintf("(%s %s)", k.Head.DebugString(), k.Tail.DebugString())
 }
 
-type KLocalVar struct{ Addr KAddr }
-type KGlobalVar struct{ Addr KAddr }
+type KVar struct{ Addr KAddr }
 
-func (k *KLocalVar) DebugString() string {
-	return fmt.Sprintf("localvar:%v", k.Addr)
-}
-
-func (k *KGlobalVar) DebugString() string {
+func (k *KVar) DebugString() string {
 	return fmt.Sprintf("localvar:%v", k.Addr)
 }
 
@@ -92,18 +100,6 @@ func (k *KSwapStack) DebugString() string {
 	return fmt.Sprintf("swapstack:%+v", k.N)
 }
 
-type KEnv struct {
-	kHeapMap
-	Const *Literal
-}
-
-func (s KEnv) String() string {
-	if s.Const != nil {
-		return fmt.Sprintf("const:%+v", *s.Const)
-	}
-	return s.kHeapMap.String()
-}
-
 type kStackEntry struct {
 	cl      KClosure
 	pointer *KClosure
@@ -116,57 +112,79 @@ func (s kStackEntry) String() string {
 	return s.cl.String()
 }
 
-type kHeapEntry struct {
-	KClosure
-	link *kHeapEntry
+type kVarEntry struct {
+	// sym is the name of the variable that's stored in this slot.  It's mainly
+	// for debugging; runtime access is done using index.
+	sym Symbol
+	cl  KClosure
 }
 
-type kHeapMap struct {
-	head *kHeapEntry
+type kEnvFrame struct {
+	Const *Literal
+	vars  []kVarEntry
+	next  *kEnvFrame
 }
 
-func (s kHeapMap) Push(cl KClosure) (s2 kHeapMap) {
-	s2.head = &kHeapEntry{KClosure: cl, link: s.head}
-	return s2
+// func (s kEnvFrame) Empty() bool { return s.head == nil }
+
+// func (s kEnvFrame) Pop() (cl KClosure, s2 kEnvFrame) {
+// 	if s.head == nil {
+// 		panic(s)
+// 	}
+// 	cl = s.head.KClosure
+// 	s2.head = s.head.link
+// 	return cl, s2
+// }
+
+func NewMachine() *KMachine {
+	return &KMachine{}
 }
 
-func (s kHeapMap) Empty() bool { return s.head == nil }
-
-func (s kHeapMap) Pop() (cl KClosure, s2 kHeapMap) {
-	if s.head == nil {
-		panic(s)
+func (k *KMachine) Read(addr KAddr) *KClosure {
+	if addr.frameIndex == kGlobalFrame {
+		return &k.Globals[addr.varIndex].cl
 	}
-	cl = s.head.KClosure
-	s2.head = s.head.link
-	return cl, s2
+	f := k.Locals
+	for addr.frameIndex > 0 {
+		f = f.next
+		addr.frameIndex--
+	}
+	if f == nil {
+		panic(k)
+	}
+	if f.Const != nil {
+		panic(f)
+	}
+	return &f.vars[addr.varIndex].cl
 }
 
-func (s kHeapMap) Read(i KAddr) *KClosure {
-	cl := s.head
-	for i > 0 {
-		cl = cl.link
-		i--
-	}
-	if cl == nil {
-		panic(s)
-	}
-	return &cl.KClosure
-}
-
-func (s kHeapMap) String() string {
+func (s *kEnvFrame) String() string {
 	var (
 		buf strings.Builder
 		i   int
-		cl  = s.head
+		f   = s
 	)
 	buf.WriteRune('[')
-	for cl != nil {
+	for f != nil {
 		if i > 0 {
 			buf.WriteRune(' ')
 		}
+		if s.Const != nil {
+			buf.WriteString(fmt.Sprintf("const:%+v", *s.Const))
+		} else {
+			buf.WriteRune('[')
+			for j, e := range f.vars {
+				if j > 0 {
+					buf.WriteRune(' ')
+				}
+				buf.WriteString(*e.sym.string)
+				buf.WriteString("=")
+				buf.WriteString(e.cl.String())
+			}
+			buf.WriteRune(']')
+		}
+		f = f.next
 		i++
-		buf.WriteString(cl.KClosure.String())
-		cl = cl.link
 	}
 	buf.WriteRune(']')
 	return buf.String()
@@ -174,7 +192,7 @@ func (s kHeapMap) String() string {
 
 type KClosure struct {
 	Code KCode
-	Env  KEnv
+	Env  *kEnvFrame
 }
 
 func (cl KClosure) String() string {
@@ -198,16 +216,17 @@ func (cl KClosure) Literal() Literal {
 	return *cl.Env.Const
 }
 
-type KAddr uint32
+const kGlobalFrame = uint32(0xffffffff)
 
-type kGlobalVar struct {
-	sym Symbol
-	cl  KClosure
+type KAddr struct {
+	frameIndex uint32
+	varIndex   uint32
 }
+
 type KMachine struct {
 	Code    KCode
-	Env     KEnv
-	Globals []kGlobalVar
+	Globals []kVarEntry
+	Locals  *kEnvFrame
 	Stack   []kStackEntry
 	step    int
 }
@@ -217,9 +236,9 @@ func (k *KMachine) Run(code KCode) Literal {
 	for k.Step() {
 	}
 	if k.Code != kRet {
-		panic(fmt.Sprintf("%d: %v %v %v", k.step, k.Code.DebugString(), k.Env.String(), k.Stack))
+		panic(fmt.Sprintf("%d: %v %v %v", k.step, k.Code.DebugString(), k.Locals.String(), k.Stack))
 	}
-	return *k.Env.Const
+	return *k.Locals.Const
 }
 
 func (k *KMachine) pushStack(e kStackEntry) {
@@ -235,20 +254,15 @@ func (k *KMachine) popStack() kStackEntry {
 
 func (k *KMachine) Step() bool {
 	k.step++
-	log.Printf("%d: %v %v %v", k.step, k.Code.DebugString(), k.Env.String(), k.Stack)
+	log.Printf("%d: %v %v %v", k.step, k.Code.DebugString(), k.Locals.String(), k.Stack)
 	switch v := k.Code.(type) {
 	case *KApply:
 		k.Code = v.Head
-		k.Stack = append(k.Stack, kStackEntry{cl: KClosure{Code: v.Tail, Env: k.Env}})
-	case *KLocalVar:
-		cl := k.Env.Read(v.Addr)
+		k.Stack = append(k.Stack, kStackEntry{cl: KClosure{Code: v.Tail, Env: k.Locals}})
+	case *KVar:
+		cl := k.Read(v.Addr)
 		k.Code = cl.Code
-		k.Env = cl.Env
-		k.pushStack(kStackEntry{pointer: cl})
-	case *KGlobalVar:
-		cl := &k.Globals[v.Addr].cl
-		k.Code = cl.Code
-		k.Env = cl.Env
+		k.Locals = cl.Env
 		k.pushStack(kStackEntry{pointer: cl})
 	case *KLambda:
 		k.Code = v.Body
@@ -256,28 +270,40 @@ func (k *KMachine) Step() bool {
 		if arg.pointer != nil {
 			panic(arg)
 		}
-		k.Env = KEnv{kHeapMap: k.Env.Push(arg.cl)}
+		k.Locals = &kEnvFrame{
+			vars: []kVarEntry{{sym: v.Arg, cl: arg.cl}},
+			next: k.Locals}
+	case *KLetrec:
+		frame := &kEnvFrame{vars: make([]kVarEntry, len(v.VarExprs)), next: k.Locals}
+		for i, b := range v.VarExprs {
+			frame.vars[i] = kVarEntry{
+				sym: v.VarNames[i],
+				cl:  KClosure{Code: b, Env: frame},
+			}
+		}
+		k.Code = v.Body
+		k.Locals = frame
 	case *KConst:
 		k.Code = kRet
-		k.Env = KEnv{Const: (*Literal)(v)}
+		k.Locals = &kEnvFrame{Const: (*Literal)(v)}
 	case *KRet:
-		if k.Env.Const == nil {
+		if k.Locals.Const == nil {
 			panic(k)
 		}
 		if len(k.Stack) == 0 {
 			return false
 		}
-		val := k.Env
+		val := k.Locals
 		top := k.popStack()
 		for top.pointer != nil {
-			*top.pointer = KClosure{Code: kRet, Env: k.Env}
+			*top.pointer = KClosure{Code: kRet, Env: k.Locals}
 			if len(k.Stack) == 0 {
 				return false
 			}
 			top = k.popStack()
 		}
 		k.Code = top.cl.Code
-		k.Env = top.cl.Env
+		k.Locals = top.cl.Env
 		k.pushStack(kStackEntry{cl: KClosure{Code: kRet, Env: val}})
 	case *KBuiltinOp:
 		switch v.Op.NArg() {
@@ -296,7 +322,7 @@ func (k *KMachine) Step() bool {
 			default:
 				panic(v)
 			}
-			k.Env = KEnv{Const: &val}
+			k.Locals = &kEnvFrame{Const: &val}
 		}
 	case *KSwapStack:
 		if v.N != 1 {
@@ -310,7 +336,7 @@ func (k *KMachine) Step() bool {
 			panic(arg1)
 		}
 		k.Code = arg1.cl.Code
-		k.Env = arg1.cl.Env
+		k.Locals = arg1.cl.Env
 		k.pushStack(arg0)
 		k.pushStack(ret)
 	default:
@@ -320,59 +346,63 @@ func (k *KMachine) Step() bool {
 }
 
 func (k *KMachine) Compile(node ASTNode) KCode {
-	var c = compiler{globals: &k.Globals}
+	var (
+		c = compiler{globals: &k.Globals}
+	)
 	return c.compile(node)
 }
 
 type compiler struct {
-	globals *[]kGlobalVar // points to kMachine.Globals
-	stack   []Symbol
+	// Points to KMachine.Globals
+	globals *[]kVarEntry
+	locals  [][]Symbol
 }
 
-func (c *compiler) lookup(pos scanner.Position, sym Symbol) (addr KAddr, global bool, ok bool) {
-	for i, name := range c.stack {
-		if name == sym {
-			return KAddr(i), false, true
+func (c *compiler) lookup(pos scanner.Position, sym Symbol) (addr KAddr, ok bool) {
+	for i, frame := range c.locals {
+		for j, name := range frame {
+			if sym == name {
+				return KAddr{frameIndex: uint32(i), varIndex: uint32(j)}, true
+			}
 		}
 	}
-	for i, g := range *c.globals {
-		if g.sym == sym {
-			return KAddr(i), true, true
+	for j, e := range *c.globals {
+		if sym == e.sym {
+			return KAddr{frameIndex: kGlobalFrame, varIndex: uint32(j)}, true
 		}
 	}
-	return 0, false, false
+	return KAddr{}, false
 }
 
 func (c *compiler) compile(node ASTNode) KCode {
 	switch v := node.(type) {
 	case *ASTAssign:
-		addr, global, ok := c.lookup(v.pos, v.Sym)
-		cl := KClosure{Code: c.compile(v.Expr), Env: KEnv{}}
-		if ok {
-			if !global {
+		addr, ok := c.lookup(v.pos, v.Sym)
+		cl := KClosure{Code: c.compile(v.Expr), Env: nil}
+		if !ok {
+			*c.globals = append(
+				*c.globals,
+				kVarEntry{sym: v.Sym, cl: cl})
+		} else {
+			if addr.frameIndex != kGlobalFrame {
 				panicf(v.pos, "local variable found where global is expected:%v", v.Sym)
 			}
-			(*c.globals)[addr].cl = cl
-		} else {
-			*c.globals = append(*c.globals, kGlobalVar{sym: v.Sym, cl: cl})
+			(*c.globals)[addr.varIndex].cl = cl
 		}
 		return cl.Code
 	case *ASTConst:
 		return (*KConst)(&v.Val)
 	case *ASTLambda:
-		c.stack = append(c.stack, v.Arg)
-		defer func() { c.stack = c.stack[:len(c.stack)-1] }()
-		return &KLambda{Body: c.compile(v.Body)}
+		mustf(v.pos, v.Arg.string != nil, "v:%v", v)
+		c.locals = append(c.locals, []Symbol{v.Arg})
+		defer func() { c.locals = c.locals[:len(c.locals)-1] }()
+		return &KLambda{Arg: v.Arg, Body: c.compile(v.Body)}
 	case *ASTVar:
-		addr, global, ok := c.lookup(v.pos, v.Sym)
+		addr, ok := c.lookup(v.pos, v.Sym)
 		if !ok {
-			panicf(v.pos, "variable %v not found in %+v %+v", v.Sym, c.stack, *c.globals)
+			panicf(v.pos, "variable %v not found in %+v", v.Sym, c.locals)
 		}
-		if global {
-			return &KGlobalVar{Addr: addr}
-		} else {
-			return &KLocalVar{Addr: addr}
-		}
+		return &KVar{Addr: addr}
 	case *ASTApply:
 		return &KApply{Head: c.compile(v.Head), Tail: c.compile(v.Tail)}
 	case *ASTApplyBuiltin:
@@ -385,6 +415,24 @@ func (c *compiler) compile(node ASTNode) KCode {
 			return &KApply{Head: c1, Tail: &KBuiltinOp{v.Op}}
 		}
 		panic("blah")
+	case *ASTLetrec:
+		n := len(v.Bindings)
+		var frame []Symbol
+		for _, b := range v.Bindings {
+			frame = append(frame, b.Sym)
+		}
+		c.locals = append(c.locals, frame)
+		var (
+			varNames = make([]Symbol, 0, n)
+			varExprs = make([]KCode, 0, n)
+		)
+		for _, b := range v.Bindings {
+			varNames = append(varNames, b.Sym)
+			varExprs = append(varExprs, c.compile(b.Expr))
+		}
+		defer func() { c.locals = c.locals[:len(c.locals)-1] }()
+		return &KLetrec{VarNames: varNames, VarExprs: varExprs, Body: c.compile(v.Body)}
+
 	}
 	panic(node)
 }

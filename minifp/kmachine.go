@@ -317,6 +317,8 @@ func (k *KMachine) Step() bool {
 			switch v.Op {
 			case BuiltinOpAdd:
 				val = NewLiteralInt(v0.Int() + v1.Int())
+			case BuiltinOpSub:
+				val = NewLiteralInt(v0.Int() - v1.Int())
 			case BuiltinOpMul:
 				val = NewLiteralInt(v0.Int() * v1.Int())
 			default:

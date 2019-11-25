@@ -39,6 +39,7 @@ var yyToknames = [...]string{
 	"';'",
 	"'='",
 	"'+'",
+	"'-'",
 	"'*'",
 	"'('",
 	"')'",
@@ -66,48 +67,48 @@ const yyLast = 61
 
 var yyAct = [...]int{
 
-	12, 5, 19, 30, 10, 20, 18, 23, 16, 15,
-	9, 5, 6, 22, 24, 25, 13, 14, 7, 26,
-	8, 2, 28, 31, 3, 29, 23, 1, 32, 33,
-	27, 35, 34, 15, 9, 21, 6, 0, 11, 0,
-	13, 14, 7, 0, 8, 15, 9, 17, 6, 4,
-	9, 0, 6, 0, 7, 0, 8, 0, 7, 0,
+	12, 5, 20, 32, 10, 21, 19, 24, 17, 16,
+	9, 5, 6, 23, 25, 26, 27, 4, 9, 7,
+	6, 8, 30, 2, 33, 31, 3, 7, 24, 8,
+	34, 35, 29, 37, 36, 16, 9, 22, 6, 1,
+	0, 11, 13, 14, 15, 7, 28, 8, 16, 9,
+	18, 6, 0, 0, 0, 13, 14, 15, 7, 0,
 	8,
 }
 var yyPact = [...]int{
 
-	45, -1000, -5, -1000, -1000, 29, -1000, 41, -1000, 1,
-	45, 3, 29, 41, 41, -1000, 5, 22, 16, -1000,
-	-7, -1000, 41, -1000, 29, 29, -1000, 41, 41, 1,
-	41, 29, 29, 29, -1000, 29,
+	13, -1000, -5, -1000, -1000, 44, -1000, 5, -1000, 1,
+	13, 3, 44, 5, 5, 5, -1000, 31, 24, 16,
+	-1000, -7, -1000, 5, -1000, 44, 44, 44, -1000, 5,
+	5, 1, 5, 44, 44, 44, -1000, 44,
 }
 var yyPgo = [...]int{
 
-	0, 27, 21, 0, 24, 2, 6, 38,
+	0, 39, 23, 0, 26, 2, 6, 41,
 }
 var yyR1 = [...]int{
 
 	0, 1, 2, 2, 4, 4, 7, 7, 3, 3,
-	3, 3, 3, 3, 3, 3, 6, 6, 5,
+	3, 3, 3, 3, 3, 3, 3, 6, 6, 5,
 }
 var yyR2 = [...]int{
 
 	0, 1, 1, 3, 4, 1, 0, 2, 1, 2,
-	1, 3, 3, 3, 4, 4, 1, 3, 3,
+	1, 3, 3, 3, 3, 4, 4, 1, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -2, -4, 4, -3, 7, 13, 15, 5,
-	9, -7, -3, 11, 12, 4, -3, -7, -6, -5,
-	4, -4, 10, 4, -3, -3, 14, 8, 6, 9,
-	10, -3, -3, -3, -5, -3,
+	-1000, -1, -2, -4, 4, -3, 7, 14, 16, 5,
+	9, -7, -3, 11, 12, 13, 4, -3, -7, -6,
+	-5, 4, -4, 10, 4, -3, -3, -3, 15, 8,
+	6, 9, 10, -3, -3, -3, -5, -3,
 }
 var yyDef = [...]int{
 
 	0, -2, 1, 2, -2, 5, 8, 0, 6, 0,
-	0, 0, 9, 0, 0, 10, 0, 0, 0, 16,
-	0, 3, 0, 7, 11, 12, 13, 0, 0, 0,
-	0, 4, 14, 15, 17, 18,
+	0, 0, 9, 0, 0, 0, 10, 0, 0, 0,
+	17, 0, 3, 0, 7, 11, 12, 13, 14, 0,
+	0, 0, 0, 4, 15, 16, 18, 19,
 }
 var yyTok1 = [...]int{
 
@@ -115,12 +116,12 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	13, 14, 12, 11, 3, 3, 3, 3, 3, 3,
+	14, 15, 13, 11, 3, 12, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 9,
 	3, 10, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 15,
+	3, 3, 16,
 }
 var yyTok2 = [...]int{
 
@@ -522,34 +523,39 @@ yydefault:
 	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpMul, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpSub, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = yyDollar[2].ast
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpMul, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 14:
-		yyDollar = yyS[yypt-4 : yypt+1]
+		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = newLambda(lexpos(yylex), yyDollar[2].arglist, yyDollar[4].ast)
+			yyVAL.ast = yyDollar[2].ast
 		}
 	case 15:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.ast = &ASTLetrec{pos: lexpos(yylex), Bindings: yyDollar[2].assignlist, Body: yyDollar[4].ast}
+			yyVAL.ast = newLambda(lexpos(yylex), yyDollar[2].arglist, yyDollar[4].ast)
 		}
 	case 16:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.ast = &ASTLetrec{pos: lexpos(yylex), Bindings: yyDollar[2].assignlist, Body: yyDollar[4].ast}
+		}
+	case 17:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.assignlist = []*ASTAssign{yyDollar[1].assign}
 		}
-	case 17:
+	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.assignlist = append(yyDollar[1].assignlist, yyDollar[3].assign)
 		}
-	case 18:
+	case 19:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.assign = &ASTAssign{pos: lexpos(yylex), Sym: InternSymbol(yyDollar[1].ident), Expr: yyDollar[3].ast}

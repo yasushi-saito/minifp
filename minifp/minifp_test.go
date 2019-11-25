@@ -39,10 +39,10 @@ func TestFunction2(t *testing.T) {
 
 func TestBuiltinBinaryOp(t *testing.T) {
 	km := minifp.NewMachine()
-	val := compileRun(t, km, `10+11`)
-	expect.EQ(t, val.String(), "21")
-	val = compileRun(t, km, `10*11`)
-	expect.EQ(t, val.String(), "110")
+	expect.EQ(t, compileRun(t, km, `10+11`).String(), "21")
+	expect.EQ(t, compileRun(t, km, `11-10`).String(), "1")
+	expect.EQ(t, compileRun(t, km, `11-10-1`).String(), "0")
+	expect.EQ(t, compileRun(t, km, `10*11`).String(), "110")
 }
 
 func TestAssign0(t *testing.T) {
@@ -56,4 +56,5 @@ func TestLetrec(t *testing.T) {
 	km := minifp.NewMachine()
 	expect.EQ(t, compileRun(t, km, `letrec x=10 in x*x`).String(), "100")
 	expect.EQ(t, compileRun(t, km, `letrec x=10; y=x+1 in x*y`).String(), "110")
+	expect.EQ(t, compileRun(t, km, `letrec x=10 in (letrec y=12 in x*y)`).String(), "120")
 }

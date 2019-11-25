@@ -56,6 +56,7 @@ expr: tokLiteral
   | expr expr { $$ = &ASTApply{pos: lexpos(yylex), Head:$1, Tail:$2} }
   | tokIdent { $$ = &ASTVar{pos: lexpos(yylex), Sym: InternSymbol($1)} }
   | expr '+' expr { $$ = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpAdd, Args: []ASTNode{$1, $3} } }
+  | expr '-' expr { $$ = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpSub, Args: []ASTNode{$1, $3} } }
   | expr '*' expr { $$ = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpMul, Args: []ASTNode{$1, $3} } }
   | '(' expr ')' { $$ = $2 }
   | '\\' arglist tokArrow expr { $$ = newLambda(lexpos(yylex), $2, $4) }

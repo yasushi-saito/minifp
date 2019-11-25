@@ -62,13 +62,16 @@ type BuiltinOpType uint
 const (
 	BuiltinOpInvalid BuiltinOpType = iota
 	BuiltinOpAdd                   = (1 << 16) | 2
-	BuiltinOpMul                   = (2 << 16) | 2
+	BuiltinOpSub                   = (2 << 16) | 2
+	BuiltinOpMul                   = (3 << 16) | 2
 )
 
 func (op BuiltinOpType) String() string {
 	switch op {
 	case BuiltinOpAdd:
 		return "builtin:+"
+	case BuiltinOpSub:
+		return "builtin:-"
 	case BuiltinOpMul:
 		return "builtin:*"
 	}

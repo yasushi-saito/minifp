@@ -64,6 +64,12 @@ const (
 	BuiltinOpAdd                   = (1 << 16) | 2
 	BuiltinOpSub                   = (2 << 16) | 2
 	BuiltinOpMul                   = (3 << 16) | 2
+	BuiltinOpGE                    = (4 << 16) | 2
+	BuiltinOpLE                    = (5 << 16) | 2
+	BuiltinOpGT                    = (6 << 16) | 2
+	BuiltinOpLT                    = (7 << 16) | 2
+	BuiltinOpEQ                    = (8 << 16) | 2
+	BuiltinOpNEQ                   = (9 << 16) | 2
 )
 
 func (op BuiltinOpType) String() string {
@@ -74,6 +80,18 @@ func (op BuiltinOpType) String() string {
 		return "builtin:-"
 	case BuiltinOpMul:
 		return "builtin:*"
+	case BuiltinOpGE:
+		return "builtin:>="
+	case BuiltinOpLE:
+		return "builtin:<="
+	case BuiltinOpGT:
+		return "builtin:>"
+	case BuiltinOpLT:
+		return "builtin:<"
+	case BuiltinOpEQ:
+		return "builtin:=="
+	case BuiltinOpNEQ:
+		return "builtin:!="
 	}
 	return fmt.Sprintf("builtin:%d", op)
 }
@@ -110,4 +128,14 @@ type ASTLetrec struct {
 func (n ASTLetrec) Pos() scanner.Position { return n.pos }
 func (n ASTLetrec) String() string {
 	return fmt.Sprintf("letrec %+v in %v", n.Bindings, n.Body)
+}
+
+type ASTIf struct {
+	pos              scanner.Position
+	Cond, Then, Else ASTNode
+}
+
+func (n ASTIf) Pos() scanner.Position { return n.pos }
+func (n ASTIf) String() string {
+	return fmt.Sprintf("if %v %v %v", n.Cond, n.Then, n.Else)
 }

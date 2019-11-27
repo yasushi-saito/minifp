@@ -24,8 +24,14 @@ type yySymType struct {
 const tokIdent = 57346
 const tokLetrec = 57347
 const tokIn = 57348
-const tokLiteral = 57349
-const tokArrow = 57350
+const tokIf = 57349
+const tokLiteral = 57350
+const tokArrow = 57351
+const tokEQ = 57352
+const tokNEQ = 57353
+const tokGE = 57354
+const tokLE = 57355
+const IFPREC = 57356
 
 var yyToknames = [...]string{
 	"$end",
@@ -34,13 +40,22 @@ var yyToknames = [...]string{
 	"tokIdent",
 	"tokLetrec",
 	"tokIn",
+	"tokIf",
 	"tokLiteral",
 	"tokArrow",
+	"tokEQ",
+	"tokNEQ",
+	"tokGE",
+	"tokLE",
+	"IFPREC",
+	"'-'",
+	"'+'",
+	"'*'",
+	"'/'",
 	"';'",
 	"'='",
-	"'+'",
-	"'-'",
-	"'*'",
+	"'<'",
+	"'>'",
 	"'('",
 	"')'",
 	"'\\\\'",
@@ -57,58 +72,74 @@ var yyExca = [...]int{
 	-2, 0,
 	-1, 4,
 	4, 6,
-	10, 6,
-	-2, 10,
+	20, 6,
+	-2, 11,
 }
 
 const yyPrivate = 57344
 
-const yyLast = 61
+const yyLast = 148
 
 var yyAct = [...]int{
 
-	12, 5, 20, 32, 10, 21, 19, 24, 17, 16,
-	9, 5, 6, 23, 25, 26, 27, 4, 9, 7,
-	6, 8, 30, 2, 33, 31, 3, 7, 24, 8,
-	34, 35, 29, 37, 36, 16, 9, 22, 6, 1,
-	0, 11, 13, 14, 15, 7, 28, 8, 16, 9,
-	18, 6, 0, 0, 0, 13, 14, 15, 7, 0,
-	8,
+	13, 5, 28, 47, 11, 29, 27, 2, 24, 25,
+	23, 10, 5, 7, 6, 33, 34, 35, 36, 37,
+	38, 39, 40, 41, 32, 42, 3, 12, 45, 8,
+	32, 9, 48, 1, 0, 44, 0, 26, 30, 0,
+	31, 46, 0, 49, 0, 50, 51, 0, 53, 52,
+	23, 10, 0, 7, 6, 0, 17, 18, 19, 20,
+	0, 15, 14, 16, 0, 0, 0, 21, 22, 8,
+	43, 9, 23, 10, 0, 7, 6, 0, 17, 18,
+	19, 20, 0, 15, 14, 16, 0, 0, 0, 21,
+	22, 8, 0, 9, 23, 10, 0, 7, 6, 0,
+	17, 18, 19, 20, 0, 0, 0, 16, 0, 0,
+	0, 21, 22, 8, 0, 9, 23, 10, 0, 7,
+	6, 0, 17, 18, 19, 20, 4, 10, 0, 7,
+	6, 0, 0, 21, 22, 8, 0, 9, 0, 0,
+	0, 0, 0, 0, 0, 8, 0, 9,
 }
 var yyPact = [...]int{
 
-	13, -1000, -5, -1000, -1000, 44, -1000, 5, -1000, 1,
-	13, 3, 44, 5, 5, 5, -1000, 31, 24, 16,
-	-1000, -7, -1000, 5, -1000, 44, 44, 44, -1000, 5,
-	5, 1, 5, 44, 44, 44, -1000, 44,
+	122, -1000, -15, -1000, -1000, 68, -1000, 6, 6, -1000,
+	1, 122, 20, 68, 6, 6, 6, 6, 6, 6,
+	6, 6, 6, -1000, 68, 46, 26, 22, -1000, -17,
+	-1000, 6, -1000, 90, 90, 112, 68, 68, 68, 68,
+	68, 68, 68, -1000, 6, 6, 1, 6, 68, 68,
+	68, 68, -1000, 68,
 }
 var yyPgo = [...]int{
 
-	0, 39, 23, 0, 26, 2, 6, 41,
+	0, 33, 7, 0, 26, 2, 6, 27,
 }
 var yyR1 = [...]int{
 
 	0, 1, 2, 2, 4, 4, 7, 7, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 6, 6, 5,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 6, 6, 5,
 }
 var yyR2 = [...]int{
 
 	0, 1, 1, 3, 4, 1, 0, 2, 1, 2,
-	1, 3, 3, 3, 3, 4, 4, 1, 3, 3,
+	4, 1, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 4, 4, 1, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -1, -2, -4, 4, -3, 7, 14, 16, 5,
-	9, -7, -3, 11, 12, 13, 4, -3, -7, -6,
-	-5, 4, -4, 10, 4, -3, -3, -3, 15, 8,
-	6, 9, 10, -3, -3, -3, -5, -3,
+	-1000, -1, -2, -4, 4, -3, 8, 7, 23, 25,
+	5, 19, -7, -3, 16, 15, 17, 10, 11, 12,
+	13, 21, 22, 4, -3, -3, -7, -6, -5, 4,
+	-4, 20, 4, -3, -3, -3, -3, -3, -3, -3,
+	-3, -3, -3, 24, 9, 6, 19, 20, -3, -3,
+	-3, -3, -5, -3,
 }
 var yyDef = [...]int{
 
-	0, -2, 1, 2, -2, 5, 8, 0, 6, 0,
-	0, 0, 9, 0, 0, 0, 10, 0, 0, 0,
-	17, 0, 3, 0, 7, 11, 12, 13, 14, 0,
-	0, 0, 0, 4, 15, 16, 18, 19,
+	0, -2, 1, 2, -2, 5, 8, 0, 0, 6,
+	0, 0, 0, 9, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 11, 0, 0, 0, 0, 24, 0,
+	3, 0, 7, 12, 13, 14, 15, 16, 17, 18,
+	19, 20, 0, 21, 0, 0, 0, 0, 4, 10,
+	22, 23, 25, 26,
 }
 var yyTok1 = [...]int{
 
@@ -116,16 +147,17 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	14, 15, 13, 11, 3, 12, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 9,
-	3, 10, 3, 3, 3, 3, 3, 3, 3, 3,
+	23, 24, 17, 16, 3, 15, 3, 18, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 19,
+	21, 20, 22, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 16,
+	3, 3, 25,
 }
 var yyTok2 = [...]int{
 
-	2, 3, 4, 5, 6, 7, 8,
+	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+	12, 13, 14,
 }
 var yyTok3 = [...]int{
 	0,
@@ -511,51 +543,86 @@ yydefault:
 			yyVAL.ast = &ASTApply{pos: lexpos(yylex), Head: yyDollar[1].ast, Tail: yyDollar[2].ast}
 		}
 	case 10:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.ast = &ASTIf{Cond: yyDollar[2].ast, Then: yyDollar[3].ast, Else: yyDollar[4].ast}
+		}
+	case 11:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
 			yyVAL.ast = &ASTVar{pos: lexpos(yylex), Sym: InternSymbol(yyDollar[1].ident)}
 		}
-	case 11:
+	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpAdd, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
-	case 12:
+	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpSub, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
-	case 13:
+	case 14:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpMul, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
-	case 14:
+	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = yyDollar[2].ast
-		}
-	case 15:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		{
-			yyVAL.ast = newLambda(lexpos(yylex), yyDollar[2].arglist, yyDollar[4].ast)
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpEQ, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 16:
-		yyDollar = yyS[yypt-4 : yypt+1]
+		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTLetrec{pos: lexpos(yylex), Bindings: yyDollar[2].assignlist, Body: yyDollar[4].ast}
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpNEQ, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 17:
-		yyDollar = yyS[yypt-1 : yypt+1]
+		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.assignlist = []*ASTAssign{yyDollar[1].assign}
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpGE, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.assignlist = append(yyDollar[1].assignlist, yyDollar[3].assign)
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpLE, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 19:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpLT, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+		}
+	case 20:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpGT, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+		}
+	case 21:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.ast = yyDollar[2].ast
+		}
+	case 22:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.ast = newLambda(lexpos(yylex), yyDollar[2].arglist, yyDollar[4].ast)
+		}
+	case 23:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		{
+			yyVAL.ast = &ASTLetrec{pos: lexpos(yylex), Bindings: yyDollar[2].assignlist, Body: yyDollar[4].ast}
+		}
+	case 24:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		{
+			yyVAL.assignlist = []*ASTAssign{yyDollar[1].assign}
+		}
+	case 25:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		{
+			yyVAL.assignlist = append(yyDollar[1].assignlist, yyDollar[3].assign)
+		}
+	case 26:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
 			yyVAL.assign = &ASTAssign{pos: lexpos(yylex), Sym: InternSymbol(yyDollar[1].ident), Expr: yyDollar[3].ast}

@@ -16,6 +16,7 @@ type LiteralType uint
 const (
 	LiteralInvalid LiteralType = iota
 	LiteralInt
+	LiteralBool
 	LiteralNil
 )
 
@@ -24,7 +25,11 @@ type Literal struct {
 	intVal int64
 }
 
-var kNil = Literal{typ: LiteralNil}
+var (
+	kNil   = Literal{typ: LiteralNil}
+	kTrue  = Literal{typ: LiteralBool, intVal: 1}
+	kFalse = Literal{typ: LiteralBool, intVal: 0}
+)
 
 func NewLiteralInt(v int64) Literal { return Literal{typ: LiteralInt, intVal: int64(v)} }
 
@@ -32,8 +37,20 @@ func (l Literal) String() string {
 	switch l.typ {
 	case LiteralInt:
 		return fmt.Sprint(l.intVal)
+	case LiteralBool:
+		if l.intVal == 0 {
+			return "false"
+		}
+		return "true"
 	}
 	panic(l)
+}
+
+func (l Literal) Bool() bool {
+	if l.typ != LiteralBool {
+		panic(l)
+	}
+	return l.intVal != 0
 }
 
 func (l Literal) Int() int64 {
@@ -80,6 +97,14 @@ var kRet = &KRet{}
 
 func (k *KRet) DebugString() string {
 	return "ret"
+}
+
+type KIf struct{}
+
+var kIf = &KIf{}
+
+func (k *KIf) DebugString() string {
+	return "if"
 }
 
 type KConst Literal
@@ -305,6 +330,25 @@ func (k *KMachine) Step() bool {
 		k.Code = top.cl.Code
 		k.Locals = top.cl.Env
 		k.pushStack(kStackEntry{cl: KClosure{Code: kRet, Env: val}})
+	case *KIf:
+		top := k.popStack()
+		thenNode := k.popStack()
+		elseNode := k.popStack()
+		if top.cl.Code != kRet {
+			panic(top.cl)
+		}
+		cond := top.cl.Env.Const
+		if cond == nil {
+			panic(top.cl)
+		}
+		if cond.Bool() {
+			k.Code = thenNode.cl.Code
+			k.Locals = thenNode.cl.Env
+		} else {
+			k.Code = elseNode.cl.Code
+			k.Locals = elseNode.cl.Env
+		}
+
 	case *KBuiltinOp:
 		switch v.Op.NArg() {
 		case 2:
@@ -321,6 +365,36 @@ func (k *KMachine) Step() bool {
 				val = NewLiteralInt(v0.Int() - v1.Int())
 			case BuiltinOpMul:
 				val = NewLiteralInt(v0.Int() * v1.Int())
+			case BuiltinOpGT:
+				val = kFalse
+				if v0.Int() > v1.Int() {
+					val = kTrue
+				}
+			case BuiltinOpGE:
+				val = kFalse
+				if v0.Int() >= v1.Int() {
+					val = kTrue
+				}
+			case BuiltinOpLT:
+				val = kFalse
+				if v0.Int() < v1.Int() {
+					val = kTrue
+				}
+			case BuiltinOpLE:
+				val = kFalse
+				if v0.Int() <= v1.Int() {
+					val = kTrue
+				}
+			case BuiltinOpEQ:
+				val = kFalse
+				if v0.Int() == v1.Int() {
+					val = kTrue
+				}
+			case BuiltinOpNEQ:
+				val = kFalse
+				if v0.Int() != v1.Int() {
+					val = kTrue
+				}
 			default:
 				panic(v)
 			}
@@ -434,7 +508,12 @@ func (c *compiler) compile(node ASTNode) KCode {
 		}
 		defer func() { c.locals = c.locals[:len(c.locals)-1] }()
 		return &KLetrec{VarNames: varNames, VarExprs: varExprs, Body: c.compile(v.Body)}
-
+	case *ASTIf:
+		return &KApply{
+			Head: &KApply{
+				Head: &KApply{Head: c.compile(v.Cond), Tail: kIf},
+				Tail: c.compile(v.Then)},
+			Tail: c.compile(v.Else)}
 	}
 	panic(node)
 }

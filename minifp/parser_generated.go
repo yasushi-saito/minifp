@@ -555,47 +555,47 @@ yydefault:
 	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpAdd, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:+"], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpSub, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:-"], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 14:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpMul, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:*"], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpEQ, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:=="], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 16:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpNEQ, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:!="], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpGE, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:>="], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 18:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpLE, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:<="], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 19:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpLT, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:<"], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 20:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		{
-			yyVAL.ast = &ASTApplyBuiltin{pos: lexpos(yylex), Op: BuiltinOpGT, Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
+			yyVAL.ast = &ASTApplyLeafFunction{pos: lexpos(yylex), Op: funcs["builtin:>"], Args: []ASTNode{yyDollar[1].ast, yyDollar[3].ast}}
 		}
 	case 21:
 		yyDollar = yyS[yypt-3 : yypt+1]

@@ -113,10 +113,10 @@ func (k *KConst) DebugString() string {
 	return fmt.Sprintf("const:%+v", (*Literal)(k).String())
 }
 
-type KBuiltinOp struct{ Op BuiltinOpType }
+type KApplyLeafFunction funcSpec
 
-func (k *KBuiltinOp) DebugString() string {
-	return fmt.Sprintf("builtin:%+v", k.Op)
+func (k *KApplyLeafFunction) DebugString() string {
+	return k.name
 }
 
 type KSwapStack struct{ N int }
@@ -348,57 +348,17 @@ func (k *KMachine) Step() bool {
 			k.Code = elseNode.cl.Code
 			k.Locals = elseNode.cl.Env
 		}
-
-	case *KBuiltinOp:
-		switch v.Op.NArg() {
+	case *KApplyLeafFunction:
+		switch v.nArg {
 		case 2:
 			arg1 := k.popStack()
 			arg0 := k.popStack()
 			v0, v1 := arg0.cl.Literal(), arg1.cl.Literal()
 			k.Code = kRet
-
-			var val Literal
-			switch v.Op {
-			case BuiltinOpAdd:
-				val = NewLiteralInt(v0.Int() + v1.Int())
-			case BuiltinOpSub:
-				val = NewLiteralInt(v0.Int() - v1.Int())
-			case BuiltinOpMul:
-				val = NewLiteralInt(v0.Int() * v1.Int())
-			case BuiltinOpGT:
-				val = kFalse
-				if v0.Int() > v1.Int() {
-					val = kTrue
-				}
-			case BuiltinOpGE:
-				val = kFalse
-				if v0.Int() >= v1.Int() {
-					val = kTrue
-				}
-			case BuiltinOpLT:
-				val = kFalse
-				if v0.Int() < v1.Int() {
-					val = kTrue
-				}
-			case BuiltinOpLE:
-				val = kFalse
-				if v0.Int() <= v1.Int() {
-					val = kTrue
-				}
-			case BuiltinOpEQ:
-				val = kFalse
-				if v0.Int() == v1.Int() {
-					val = kTrue
-				}
-			case BuiltinOpNEQ:
-				val = kFalse
-				if v0.Int() != v1.Int() {
-					val = kTrue
-				}
-			default:
-				panic(v)
-			}
+			val := v.cb(v0, v1)
 			k.Locals = &kEnvFrame{Const: &val}
+		default:
+			panic(v)
 		}
 	case *KSwapStack:
 		if v.N != 1 {
@@ -481,14 +441,14 @@ func (c *compiler) compile(node ASTNode) KCode {
 		return &KVar{Addr: addr}
 	case *ASTApply:
 		return &KApply{Head: c.compile(v.Head), Tail: c.compile(v.Tail)}
-	case *ASTApplyBuiltin:
+	case *ASTApplyLeafFunction:
 		if len(v.Args) == 1 {
-			return &KApply{Head: c.compile(v.Args[0]), Tail: &KBuiltinOp{v.Op}}
+			return &KApply{Head: c.compile(v.Args[0]), Tail: (*KApplyLeafFunction)(v.Op)}
 		}
 		if len(v.Args) == 2 {
 			c0 := &KApply{Head: c.compile(v.Args[0]), Tail: &KSwapStack{1}}
 			c1 := &KApply{Head: c0, Tail: c.compile(v.Args[1])}
-			return &KApply{Head: c1, Tail: &KBuiltinOp{v.Op}}
+			return &KApply{Head: c1, Tail: (*KApplyLeafFunction)(v.Op)}
 		}
 		panic("blah")
 	case *ASTLetrec:

@@ -57,57 +57,15 @@ func (n ASTAssign) String() string {
 	return n.Sym.String() + "=" + n.Expr.String()
 }
 
-type BuiltinOpType uint
-
-const (
-	BuiltinOpInvalid BuiltinOpType = iota
-	BuiltinOpAdd                   = (1 << 16) | 2
-	BuiltinOpSub                   = (2 << 16) | 2
-	BuiltinOpMul                   = (3 << 16) | 2
-	BuiltinOpGE                    = (4 << 16) | 2
-	BuiltinOpLE                    = (5 << 16) | 2
-	BuiltinOpGT                    = (6 << 16) | 2
-	BuiltinOpLT                    = (7 << 16) | 2
-	BuiltinOpEQ                    = (8 << 16) | 2
-	BuiltinOpNEQ                   = (9 << 16) | 2
-)
-
-func (op BuiltinOpType) String() string {
-	switch op {
-	case BuiltinOpAdd:
-		return "builtin:+"
-	case BuiltinOpSub:
-		return "builtin:-"
-	case BuiltinOpMul:
-		return "builtin:*"
-	case BuiltinOpGE:
-		return "builtin:>="
-	case BuiltinOpLE:
-		return "builtin:<="
-	case BuiltinOpGT:
-		return "builtin:>"
-	case BuiltinOpLT:
-		return "builtin:<"
-	case BuiltinOpEQ:
-		return "builtin:=="
-	case BuiltinOpNEQ:
-		return "builtin:!="
-	}
-	return fmt.Sprintf("builtin:%d", op)
-}
-func (o BuiltinOpType) NArg() int {
-	return int(o & 0xffff)
-}
-
-type ASTApplyBuiltin struct {
+type ASTApplyLeafFunction struct {
 	pos  scanner.Position
-	Op   BuiltinOpType
+	Op   *funcSpec
 	Args []ASTNode
 }
 
-func (n ASTApplyBuiltin) Pos() scanner.Position { return n.pos }
+func (n ASTApplyLeafFunction) Pos() scanner.Position { return n.pos }
 
-func (n ASTApplyBuiltin) String() string {
+func (n ASTApplyLeafFunction) String() string {
 	var buf strings.Builder
 	buf.WriteRune('(')
 	buf.WriteString(fmt.Sprint(n.Op))
